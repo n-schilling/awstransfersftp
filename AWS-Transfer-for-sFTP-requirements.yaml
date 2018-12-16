@@ -1,0 +1,72 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: Contains all requirements for AWS Transfer for sFTP
+
+Parameters:
+  S3BucketName:
+    Type: String
+    Description: Name of the S3 bucket which is used for AWS Transfer for sFTP
+
+Resources:
+  TransferS3Bucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Ref S3BucketName
+      AccessControl: Private
+
+  TransferUserRole:
+    Type: 'AWS::IAM::Role'
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: 'Allow'
+            Principal:
+              Service:
+                - 'transfer.amazonaws.com'
+            Action: sts:AssumeRole
+      Path: "/"
+      Policies:
+        -
+          PolicyName: "AWSTransferUser"
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: 'Allow'
+                Resource: !Sub "arn:aws:s3:::${S3BucketName}"
+                Action:
+                  - s3:ListBucket
+              - Effect: 'Allow'
+                Resource: !Sub "arn:aws:s3:::${S3BucketName}/*"
+                Action:
+                  - s3:PutObject
+                  - s3:GetObject
+                  - s3:DeleteObject
+
+  TransferLoggingRole:
+    Type: 'AWS::IAM::Role'
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: 'Allow'
+            Principal:
+              Service:
+                - 'transfer.amazonaws.com'
+            Action: sts:AssumeRole
+      Path: "/"
+      Policies:
+        -
+          PolicyName: "AWSTransferLogging"
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: 'Allow'
+                Resource: '*'
+                Action:
+                  - logs:CreateLogGroup
+                  - logs:CreateLogStream
+                  - logs:DescribeLogGroups
+                  - logs:DescribeLogStreams
+                  - logs:PutLogEvents
+                  - logs:GetLogEvents
+                  - logs:FilterLogEvents
